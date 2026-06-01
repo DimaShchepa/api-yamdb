@@ -46,11 +46,9 @@ class Title(models.Model):
                                  null=True,
                                  blank=True,
                                  related_name='titles')
-    genre = models.ForeignKey(Genre,
-                              on_delete=models.SET_NULL,
-                              null=True,
-                              blank=True,
-                              related_name='titles')
+    genre = models.ManyToManyField(
+        Genre, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='titles')
     name = models.CharField(max_length=256,)
     year = models.IntegerField(
         validators=[
@@ -58,7 +56,7 @@ class Title(models.Model):
             MaxValueValidator(timezone.now().year)
         ]
     )
-    description = models.TextField()
+    description = models.TextField(blank=True)
     rating = models.FloatField(null=True, blank=True)
 
     def __str__(self):
