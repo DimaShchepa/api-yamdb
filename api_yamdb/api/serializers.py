@@ -39,3 +39,10 @@ class TitleSerializer(serializers.ModelSerializer):
                   'name', 'year', 'description')
         read_only_fields = ('genre', 'description', 'category')
 
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='author.username', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'score', 'title', 'pub_date')

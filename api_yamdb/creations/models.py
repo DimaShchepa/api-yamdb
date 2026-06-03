@@ -71,6 +71,9 @@ class Review(models.Model):
                               related_name='reviews')
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
 
+    class Meta:
+        unique_together = ('title', 'author')
+
 
 class Comment(models.Model):
     title = models.ForeignKey(Title, on_delete=models.CASCADE,
