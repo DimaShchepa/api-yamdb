@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 
 from creations.models import User, Title, Review, Comment, Category, Genre
-from .serializers import TitleSerializer, CategotySerializer, GenreSerializer, ReviewSerializer
+from .serializers import TitleSerializer, CategotySerializer, GenreSerializer, ReviewSerializer, CommentSerializers
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -41,6 +41,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
+    serializer_class = CommentSerializers
+
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
+    def get_queryset(self):
+        title = self.get_title()
+        return title.comments.all()
+
+    def perform_create(self, serializer):
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
