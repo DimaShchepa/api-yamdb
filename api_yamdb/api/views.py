@@ -1,9 +1,11 @@
-from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework import viewsets, permissions
 from django.shortcuts import get_object_or_404
 
 from creations.models import User, Title, Review, Comment, Category, Genre
-from .serializers import TitleSerializer, CategotySerializer, GenreSerializer, ReviewSerializer, CommentSerializers
+from .serializers import (TitleSerializer, CategotySerializer,
+                          GenreSerializer, ReviewSerializer,
+                          CommentSerializer)
+from .permissions import IsAdminOrReadOnly
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -13,6 +15,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -21,7 +24,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -41,7 +44,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
-    serializer_class = CommentSerializers
+    serializer_class = CommentSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -58,8 +62,10 @@ class CommentViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategotySerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
