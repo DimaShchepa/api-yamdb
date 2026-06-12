@@ -103,7 +103,7 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+.venv*/
 env/
 venv/
 ENV/
@@ -147,4 +147,3 @@ dmypy.json
 
 # папки со статикой и медиа
 media/
-
