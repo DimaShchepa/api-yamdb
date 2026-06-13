@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'api',
+    'creations',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +89,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 

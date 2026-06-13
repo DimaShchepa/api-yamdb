@@ -8,13 +8,14 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import User
+from creations.models import Title, Review, Comment, Category, Genre
 
 from .permissions import IsAdmin
 from .serializers import (
-    MeSerializer,
-    SignupSerializer,
-    TokenSerializer,
-    UserSerializer,
+    MeSerializer, SignupSerializer,
+    TokenSerializer, UserSerializer,
+    TitleSerializer, CategotySerializer,
+    GenreSerializer, ReviewSerializer, CommentSerializer
 )
 
 
@@ -83,3 +84,62 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
+    def get_queryset(self):
+        title = self.get_title()
+        try:
+            title = Title.objects.get(id=title)
+            return Review.objects.filter(title=title).select_related('author')
+        except Title.DoesNotExist:
+            return Review.objects.none()
+
+    def perform_create(self, serializer):
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
+    def get_queryset(self):
+        title = self.get_title()
+        return title.comments.all()
+
+    def perform_create(self, serializer):
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategotySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
