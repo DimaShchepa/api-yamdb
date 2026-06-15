@@ -1,8 +1,10 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action, api_view, permission_classes
+
 
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -14,7 +16,7 @@ from .permissions import IsAdmin, IsAuthorModeratorAdminOrReadOnly, IsAdminOrRea
 from .serializers import (
     MeSerializer, SignupSerializer,
     TokenSerializer, UserSerializer,
-    TitleSerializer, CategotySerializer,
+    TitleSerializer, CategorySerializer,
     GenreSerializer, ReviewSerializer, CommentSerializer
 )
 
@@ -91,9 +93,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
@@ -101,18 +100,22 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
 
     def get_title(self):
-        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+        title_id = self.kwargs.get('title_id')
+        if not title_id:
+            raise ValidationError({'title_id': 'Требуется ID произвеления'})
+        return get_object_or_404(Title, id=title_id)
 
     def get_queryset(self):
         title = self.get_title()
-        try:
-            title = Title.objects.get(id=title)
-            return Review.objects.filter(title=title).select_related('author')
-        except Title.DoesNotExist:
-            return Review.objects.none()
+        return Review.objects.filter(title=title).select_related('author')
 
     def perform_create(self, serializer):
         title = self.get_title()
+        if Review.objects.filter(title=title, author=self.request.user).exists():
+            self.permission_denied(
+                self.request,
+                message='Вы уже оставили отзыв на это произведение'
+            )
         serializer.save(author=self.request.user, title=title)
 
 
@@ -135,7 +138,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
-    serializer_class = CategotySerializer
+    serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 

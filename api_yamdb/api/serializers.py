@@ -79,7 +79,7 @@ class MeSerializer(UserSerializer):
         read_only_fields = ('role',)
 
 
-class CategotySerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
@@ -88,32 +88,44 @@ class CategotySerializer(serializers.ModelSerializer):
 
 class GenreSerializer(serializers.ModelSerializer):
 
-    class Mata:
+    class Meta:
         model = Genre
-        fields = ('slug', 'name')
+        fields = ('id', 'name', 'slug')
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True)
-    category_slug = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
-        write_only=True,
+    # genre = GenreSerializer(many=True)
+    # category_slug = serializers.SlugRelatedField(
+    #     queryset=Category.objects.all(),
+    #     write_only=True,
+    #     slug_field='slug',
+    #     required=False
+    # )
+    # genre_slugs = serializers.SlugRelatedField(
+    #     queryset=Genre.objects.all(),
+    #     write_only=True,
+    #     slug_field='slug',
+    #     many=True,
+    #     required=False
+    # )
+    genre = serializers.SlugRelatedField(
         slug_field='slug',
-        required=False
-    )
-    genre_slugs = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
-        write_only=True,
-        slug_field='slug',
         many=True,
         required=False
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        required=False,
+        allow_null=True
     )
 
     class Meta:
         model = Title
-        fields = ('id', 'category', 'category_slug', 'genre', 'genre_slug',
+        fields = ('id', 'category', 'genre',
                   'name', 'year', 'description')
-        read_only_fields = ('genre', 'description', 'category')
+        read_only_fields = ('description',)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -121,7 +133,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'score', 'title', 'pub_date')
+        fields = ('id', 'text', 'score', 'title', 'pub_date', 'author')
+        read_only_fields = ('pub_date',)
 
 
 class CommentSerializer(serializers.ModelSerializer):
