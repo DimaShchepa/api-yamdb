@@ -93,6 +93,11 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
 
+    def get_permissions(self):
+        if self.action == 'list':
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
@@ -127,13 +132,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
 
+    def get_review(self):
+        review_id = self.kwargs.get('review_id')
+        return get_object_or_404(Review,
+                                 id=review_id)
+
     def get_queryset(self):
-        title = self.get_title()
-        return title.comments.all()
+        review = self.get_review()
+        return Comment.objects.filter(review=review)
 
     def perform_create(self, serializer):
-        title = self.get_title()
-        serializer.save(author=self.request.user, title=title)
+        review = self.get_review()
+        serializer.save(author=self.request.user, review=review)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

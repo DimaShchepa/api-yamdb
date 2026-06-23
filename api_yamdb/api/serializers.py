@@ -33,12 +33,11 @@ class SignupSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-    def create(self, validated_data):
-        user, created = User.objects.get_or_create(**validated_data)
-        if created:
-            user.set_unusable_password()
-            user.save(update_fields=('password',))
-        return user
+    # def create(self, validated_data):
+    #     user, created = User.objects.get_or_create(**validated_data)
+    #     if created:
+    #         user.set_unusable_password()
+    #     return user
 
 
 class TokenSerializer(serializers.Serializer):
@@ -114,18 +113,21 @@ class TitleSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all(),
-        required=False,
-        allow_null=True
-    )
+    category = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = ('id', 'category', 'genre',
                   'name', 'year', 'description')
         read_only_fields = ('description',)
+
+    def get_category(self, obj):
+        if obj.category:
+            return {
+                'name': obj.category.name,
+                'slug': obj.category.slug
+            }
+        return None
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -134,7 +136,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'score', 'title', 'pub_date', 'author')
-        read_only_fields = ('pub_date',)
+        read_only_fields = ('pub_date', 'title')
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -144,4 +146,5 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'author', 'text', 'review', 'pub_date', 'title')
+        fields = ('id', 'author', 'text', 'review', 'title', 'pub_date')
+        read_only_fields = ('pub_date', 'title')
