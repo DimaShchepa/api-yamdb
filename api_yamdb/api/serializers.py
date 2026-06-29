@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from users.models import User
@@ -93,27 +94,14 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    # genre = GenreSerializer(many=True)
-    # category_slug = serializers.SlugRelatedField(
-    #     queryset=Category.objects.all(),
-    #     write_only=True,
-    #     slug_field='slug',
-    #     required=False
-    # )
-    # genre_slugs = serializers.SlugRelatedField(
-    #     queryset=Genre.objects.all(),
-    #     write_only=True,
-    #     slug_field='slug',
-    #     many=True,
-    #     required=False
-    # )
+
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True,
         required=False
     )
-    category = serializers.SerializerMethodField()
+    category = CategorySerializer(allow_null=True, required=False)
 
     class Meta:
         model = Title
@@ -121,13 +109,13 @@ class TitleSerializer(serializers.ModelSerializer):
                   'name', 'year', 'description')
         read_only_fields = ('description',)
 
-    def get_category(self, obj):
-        if obj.category:
-            return {
-                'name': obj.category.name,
-                'slug': obj.category.slug
-            }
-        return None
+    def validate_year(self, value):
+        current_year = timezone.now().year
+        if value < 1 or value > current_year:
+            raise serializers.ValidationError(
+                f"Год должен быть между 1 и {current_year}."
+            )
+        return value
 
 
 class ReviewSerializer(serializers.ModelSerializer):

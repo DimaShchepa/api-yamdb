@@ -92,9 +92,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
+    http_method_names = ['get', 'post', 'head', 'options', 'patch']
 
     def get_permissions(self):
-        if self.action == 'list':
+        if self.action == 'list' or self.action == 'retrieve':
             return [permissions.AllowAny()]
         return super().get_permissions()
 

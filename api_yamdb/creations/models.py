@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
@@ -26,17 +25,12 @@ class Title(models.Model):
     category = models.ForeignKey(Category,
                                  on_delete=models.SET_NULL,
                                  null=True,
-                                 blank=True,
+                                 blank=False,
                                  related_name='titles')
     genre = models.ManyToManyField(
         Genre, blank=True, related_name='titles')
     name = models.CharField(max_length=256,)
-    year = models.IntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(timezone.now().year)
-        ]
-    )
+    year = models.IntegerField()
     description = models.TextField(blank=True, null=True)
     rating = models.FloatField(null=True, blank=True)
 
@@ -68,4 +62,3 @@ class Comment(models.Model):
                               default=1)
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
-    
