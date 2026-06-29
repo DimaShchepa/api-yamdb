@@ -89,15 +89,59 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.select_related('category',).all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
-    http_method_names = ['get', 'post', 'head', 'options', 'patch']
+    http_method_names = ['get', 'post', 'head', 'options', 'patch', 'delete']
 
     def get_permissions(self):
         if self.action == 'list' or self.action == 'retrieve':
             return [permissions.AllowAny()]
         return super().get_permissions()
+
+    def get_queryset(self):
+        """
+        Ручная реализация фильтрации по genre__slug.
+        Это обходит ошибку django-filter, который пытается искать по ID.
+        """
+        queryset = super().get_queryset()
+
+        category_slugs = self.request.query_params.getlist('category')
+
+        if category_slugs:
+    
+            category_slugs = [c.strip() for c in category_slugs if c.strip()]
+            
+            if category_slugs:
+                matching_categories = Category.objects.filter(slug__in=category_slugs)
+                if matching_categories.exists():
+                    queryset = queryset.filter(category__in=matching_categories).distinct()
+                else:
+                    queryset = queryset.none()
+
+        genre_slugs = self.request.query_params.getlist('genre')
+
+        if genre_slugs:
+            genre_slugs = [g.strip() for g in genre_slugs if g.strip()]
+
+            if genre_slugs:
+                matching_genres = Genre.objects.filter(slug__in=genre_slugs)
+                if matching_genres.exists():
+                    queryset = queryset.filter(genre__in=matching_genres).distinct()
+                else:
+                    queryset = queryset.none()
+
+        year_param = self.request.query_params.get('year')
+        if year_param:
+            try:
+
+                year_value = int(year_param)
+                queryset = queryset.filter(year=year_value)
+            except (ValueError, TypeError):
+
+                queryset = queryset.none()
+
+        return queryset
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

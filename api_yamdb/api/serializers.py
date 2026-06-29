@@ -101,13 +101,27 @@ class TitleSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    category = CategorySerializer(allow_null=True, required=False)
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        allow_null=True,
+        required=False,
+    )
 
     class Meta:
         model = Title
         fields = ('id', 'category', 'genre',
                   'name', 'year', 'description')
-        read_only_fields = ('description',)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.category:
+            data['category'] = CategorySerializer(instance.category).data
+        data['genre'] = [
+            {'name': genre.name, 'slug': genre.slug}
+            for genre in instance.genre.all()
+        ]
+        return data
 
     def validate_year(self, value):
         current_year = timezone.now().year
