@@ -1,5 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
+from django.db.models import Avg
 
 from users.models import User
 from creations.models import Title, Review, Comment, Category, Genre
@@ -90,7 +91,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        fields = ('id', 'name', 'slug')
+        fields = ('name', 'slug')
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -111,10 +112,11 @@ class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = ('id', 'category', 'genre',
-                  'name', 'year', 'description')
+                  'name', 'year', 'description', 'rating')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data['rating'] = self.get_rating(instance)
         if instance.category:
             data['category'] = CategorySerializer(instance.category).data
         data['genre'] = [
@@ -131,6 +133,13 @@ class TitleSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def get_rating(self, obj):
+        reviews = getattr(obj, 'reviews', None)
+        if not reviews:
+            return None
+        result = reviews.aggregate(avg_score=Avg('score'))['avg_score']
+        return round(result) if result is not None else None
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source='author.username', read_only=True)
@@ -139,6 +148,21 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'score', 'title', 'pub_date', 'author')
         read_only_fields = ('pub_date', 'title')
+    
+    def create(self, validated_data):
+        user = self.context.get('request').user
+        title = self.context.get('title')
+
+        if user and title:
+            if Review.objects.filter(title=title, author=user).exists():
+                raise serializers.ValidationError(
+                    {'non_field_errors': ['Вы уже оставили отзыв на это произведение']}
+                )
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 
 class CommentSerializer(serializers.ModelSerializer):

@@ -24,14 +24,6 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             or request.user.is_authenticated
         )
 
-    # def has_object_permission(self, request, view, obj):
-    #     return (
-    #         request.method in SAFE_METHODS
-    #         or obj.author == request.user
-    #         or request.user.is_moderator
-    #         or request.user.is_admin
-    #     )
-
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
@@ -43,3 +35,10 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             return True
 
         return False
+    # def has_object_permission(self, request, view, obj):
+    #     return (
+    #         request.method in SAFE_METHODS
+    #         or obj.author == request.user
+    #         or request.user.is_moderator
+    #         or request.user.is_admin
+    #     )

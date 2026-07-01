@@ -1,10 +1,13 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action, api_view, permission_classes
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import NotAuthenticated
 
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -89,7 +92,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.select_related('category',).all()
+    queryset = Title.objects.select_related('category',)
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
     http_method_names = ['get', 'post', 'head', 'options', 'patch', 'delete']
@@ -99,55 +102,41 @@ class TitleViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return super().get_permissions()
 
-    def get_queryset(self):
-        """
-        Ручная реализация фильтрации по genre__slug.
-        Это обходит ошибку django-filter, который пытается искать по ID.
-        """
-        queryset = super().get_queryset()
+    def filter_queryset(self, queryset):
 
         category_slugs = self.request.query_params.getlist('category')
-
         if category_slugs:
-    
             category_slugs = [c.strip() for c in category_slugs if c.strip()]
-            
             if category_slugs:
-                matching_categories = Category.objects.filter(slug__in=category_slugs)
-                if matching_categories.exists():
-                    queryset = queryset.filter(category__in=matching_categories).distinct()
-                else:
-                    queryset = queryset.none()
+                queryset = queryset.filter(category__slug__in=category_slugs)
 
+        # # --- ФИЛЬТР ПО ЖАНРУ (по slug) ---
         genre_slugs = self.request.query_params.getlist('genre')
-
         if genre_slugs:
             genre_slugs = [g.strip() for g in genre_slugs if g.strip()]
-
             if genre_slugs:
-                matching_genres = Genre.objects.filter(slug__in=genre_slugs)
-                if matching_genres.exists():
-                    queryset = queryset.filter(genre__in=matching_genres).distinct()
-                else:
-                    queryset = queryset.none()
+                queryset = queryset.filter(genre__slug__in=genre_slugs).distinct()
 
         year_param = self.request.query_params.get('year')
         if year_param:
             try:
-
                 year_value = int(year_param)
                 queryset = queryset.filter(year=year_value)
             except (ValueError, TypeError):
+                pass
 
-                queryset = queryset.none()
+        name_param = self.request.query_params.get('name')
+        if name_param:
+            queryset = queryset.filter(name__icontains=name_param)
 
         return queryset
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
+    # queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -159,20 +148,37 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = self.get_title()
         return Review.objects.filter(title=title).select_related('author')
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['title'] = self.get_title()
+        return context
+
     def perform_create(self, serializer):
         title = self.get_title()
-        if Review.objects.filter(title=title, author=self.request.user).exists():
-            self.permission_denied(
-                self.request,
-                message='Вы уже оставили отзыв на это произведение'
-            )
         serializer.save(author=self.request.user, title=title)
+
+    # def perform_update(self, serializer):
+    #     review = serializer.instance
+    #     user = self.request.user
+
+    #     is_author = (review.author == user)
+    #     is_admin = user.is_staff
+    #     is_moderator = False
+
+    #     if hasattr(user, 'role'):
+    #         is_moderator = (user.role == 'moderator')
+
+    #     if is_author or is_admin or is_moderator:
+    #         serializer.save()
+    #     else:
+    #         raise PermissionDenied('Нет прав на редактирование отзыва')
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -195,9 +201,44 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['name']
+
+    lookup_field = 'slug'
+
+    def get_permissions(self):
+        if self.action in 'list':
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
+
+    lookup_field = 'slug'
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        search_query = self.request.query_params.get('search')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+        return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
