@@ -35,11 +35,12 @@ class SignupSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-    # def create(self, validated_data):
-    #     user, created = User.objects.get_or_create(**validated_data)
-    #     if created:
-    #         user.set_unusable_password()
-    #     return user
+    def create(self, validated_data):
+        user, created = User.objects.get_or_create(**validated_data)
+        if created:
+            user.set_unusable_password()
+            user.save()
+        return user
 
 
 class TokenSerializer(serializers.Serializer):
@@ -75,7 +76,7 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
-class MeSerializer(UserSerializer):
+class CurrentUserSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         read_only_fields = ('role',)
 
@@ -148,7 +149,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'score', 'title', 'pub_date', 'author')
         read_only_fields = ('pub_date', 'title')
-    
+
     def create(self, validated_data):
         user = self.context.get('request').user
         title = self.context.get('title')
@@ -156,7 +157,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         if user and title:
             if Review.objects.filter(title=title, author=user).exists():
                 raise serializers.ValidationError(
-                    {'non_field_errors': ['Вы уже оставили отзыв на это произведение']}
+                    {
+                        'non_field_errors': [
+                            'Вы уже оставили отзыв на это произведение'
+                        ]
+                    }
                 )
 
         return super().create(validated_data)
@@ -172,5 +177,5 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'author', 'text', 'review', 'title', 'pub_date')
-        read_only_fields = ('pub_date', 'title')
+        fields = ('id', 'author', 'text', 'pub_date')
+        read_only_fields = ('pub_date',)

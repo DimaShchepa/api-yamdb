@@ -1,13 +1,10 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import NotAuthenticated
 
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -15,9 +12,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from creations.models import Title, Review, Comment, Category, Genre
 
-from .permissions import IsAdmin, IsAuthorModeratorAdminOrReadOnly, IsAdminOrReadOnly
+from .permissions import (
+    IsAdmin, IsAuthorModeratorAdminOrReadOnly, IsAdminOrReadOnly
+)
 from .serializers import (
-    MeSerializer, SignupSerializer,
+    CurrentUserSerializer, SignupSerializer,
     TokenSerializer, UserSerializer,
     TitleSerializer, CategorySerializer,
     GenreSerializer, ReviewSerializer, CommentSerializer
@@ -78,10 +77,10 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def me(self, request):
         if request.method == 'GET':
-            serializer = MeSerializer(request.user)
+            serializer = CurrentUserSerializer(request.user)
             return Response(serializer.data)
 
-        serializer = MeSerializer(
+        serializer = CurrentUserSerializer(
             request.user,
             data=request.data,
             partial=True,
@@ -115,7 +114,9 @@ class TitleViewSet(viewsets.ModelViewSet):
         if genre_slugs:
             genre_slugs = [g.strip() for g in genre_slugs if g.strip()]
             if genre_slugs:
-                queryset = queryset.filter(genre__slug__in=genre_slugs).distinct()
+                queryset = queryset.filter(
+                    genre__slug__in=genre_slugs
+                ).distinct()
 
         year_param = self.request.query_params.get('year')
         if year_param:
@@ -194,7 +195,11 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         review = self.get_review()
-        serializer.save(author=self.request.user, review=review)
+        serializer.save(
+            author=self.request.user,
+            review=review,
+            title=review.title,
+        )
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
