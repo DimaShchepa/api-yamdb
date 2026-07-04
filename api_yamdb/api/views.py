@@ -26,6 +26,7 @@ from .serializers import (
 @api_view(('POST',))
 @permission_classes((permissions.AllowAny,))
 def signup(request):
+    """Register a user and send a confirmation code by email."""
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
@@ -42,6 +43,7 @@ def signup(request):
 @api_view(('POST',))
 @permission_classes((permissions.AllowAny,))
 def token(request):
+    """Issue a JWT token in exchange for a valid confirmation code."""
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
@@ -61,6 +63,8 @@ def token(request):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Provide administrator access to user accounts."""
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
@@ -76,6 +80,7 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path='me',
     )
     def me(self, request):
+        """Return or update the authenticated user's profile."""
         if request.method == 'GET':
             serializer = CurrentUserSerializer(request.user)
             return Response(serializer.data)
@@ -91,6 +96,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Provide API operations for works."""
+
     queryset = Title.objects.select_related('category',)
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
@@ -109,7 +116,6 @@ class TitleViewSet(viewsets.ModelViewSet):
             if category_slugs:
                 queryset = queryset.filter(category__slug__in=category_slugs)
 
-        # # --- ФИЛЬТР ПО ЖАНРУ (по slug) ---
         genre_slugs = self.request.query_params.getlist('genre')
         if genre_slugs:
             genre_slugs = [g.strip() for g in genre_slugs if g.strip()]
@@ -134,7 +140,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    # queryset = Review.objects.all()
+    """Provide API operations for reviews of a work."""
+
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
@@ -158,24 +165,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = self.get_title()
         serializer.save(author=self.request.user, title=title)
 
-    # def perform_update(self, serializer):
-    #     review = serializer.instance
-    #     user = self.request.user
-
-    #     is_author = (review.author == user)
-    #     is_admin = user.is_staff
-    #     is_moderator = False
-
-    #     if hasattr(user, 'role'):
-    #         is_moderator = (user.role == 'moderator')
-
-    #     if is_author or is_admin or is_moderator:
-    #         serializer.save()
-    #     else:
-    #         raise PermissionDenied('Нет прав на редактирование отзыва')
-
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Provide API operations for comments."""
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
@@ -203,6 +196,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """Provide API operations for work categories."""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -224,6 +219,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class GenreViewSet(viewsets.ModelViewSet):
+    """Provide API operations for work genres."""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)

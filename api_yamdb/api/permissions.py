@@ -4,11 +4,15 @@ from users.models import User
 
 
 class IsAdmin(BasePermission):
+    """Allow access only to YaMDb administrators."""
+
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.is_admin
 
 
 class IsAdminOrReadOnly(BasePermission):
+    """Allow reads to everyone and writes only to administrators."""
+
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
@@ -18,6 +22,8 @@ class IsAdminOrReadOnly(BasePermission):
 
 
 class IsAuthorModeratorAdminOrReadOnly(BasePermission):
+    """Allow object changes to its author, moderators, or administrators."""
+
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
@@ -35,10 +41,3 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             return True
 
         return False
-    # def has_object_permission(self, request, view, obj):
-    #     return (
-    #         request.method in SAFE_METHODS
-    #         or obj.author == request.user
-    #         or request.user.is_moderator
-    #         or request.user.is_admin
-    #     )

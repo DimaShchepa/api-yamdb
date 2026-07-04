@@ -5,6 +5,8 @@ from users.models import User
 
 
 class Category(models.Model):
+    """A model with categories"""
+
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
 
@@ -13,6 +15,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
+    """A model with genres"""
+
     name = models.CharField(max_length=256,)
     slug = models.SlugField(unique=True, max_length=50)
 
@@ -21,6 +25,8 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
+    """A model describing the work of titles"""
+
     category = models.ForeignKey(Category,
                                  on_delete=models.SET_NULL,
                                  null=True,
@@ -38,6 +44,8 @@ class Title(models.Model):
 
 
 class Review(models.Model):
+    """A model describing the work of reviewers"""
+
     text = models.CharField(max_length=256)
     score = models.IntegerField(validators=[MinValueValidator(1),
                                             MaxValueValidator(10)])
@@ -52,6 +60,8 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
+    """A model describing how comments work"""
+
     review = models.ForeignKey(Review, on_delete=models.CASCADE,
                                related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE,

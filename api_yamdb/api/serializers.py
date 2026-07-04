@@ -8,6 +8,8 @@ from .validators import validate_username
 
 
 class SignupSerializer(serializers.ModelSerializer):
+
+    """Validate data used for user registration."""
     username = serializers.CharField(
         max_length=150,
         validators=(validate_username,),
@@ -20,6 +22,8 @@ class SignupSerializer(serializers.ModelSerializer):
         validators = ()
 
     def validate(self, attrs):
+
+        """Allow repeated signup only for the same username and email."""
         username = attrs['username']
         email = attrs['email']
         username_owner = User.objects.filter(username=username).first()
@@ -36,6 +40,8 @@ class SignupSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        """Create a user or return one registered with the same data."""
+
         user, created = User.objects.get_or_create(**validated_data)
         if created:
             user.set_unusable_password()
@@ -44,11 +50,15 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
+    """Validate data required to obtain a JWT token."""
+
     username = serializers.CharField(max_length=150)
     confirmation_code = serializers.CharField()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Serialize user data for administrator endpoints."""
+
     username = serializers.CharField(
         max_length=150,
         validators=(validate_username,),
@@ -66,6 +76,7 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
     def validate_username(self, value):
+        """Check that username is not used by another user."""
         queryset = User.objects.filter(username=value)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
@@ -77,11 +88,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CurrentUserSerializer(UserSerializer):
+    """Serialize the current user without allowing role changes."""
+
     class Meta(UserSerializer.Meta):
         read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Serialize work categories."""
 
     class Meta:
         model = Category
@@ -89,6 +103,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """Serialize work genres."""
 
     class Meta:
         model = Genre
@@ -96,6 +111,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """Serialize works and their category and genres."""
 
     genre = serializers.SlugRelatedField(
         slug_field='slug',
@@ -143,6 +159,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Serialize user reviews."""
+
     author = serializers.CharField(source='author.username', read_only=True)
 
     class Meta:
@@ -171,6 +189,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Serialize comments on reviews."""
+
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )

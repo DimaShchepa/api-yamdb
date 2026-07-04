@@ -3,6 +3,8 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """Store YaMDb user profile and role."""
+
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
@@ -26,8 +28,10 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
+        """Return whether the user has administrator rights."""
         return self.role == self.ADMIN or self.is_superuser
 
     @property
     def is_moderator(self):
+        """Return whether the user has the moderator role."""
         return self.role == self.MODERATOR
