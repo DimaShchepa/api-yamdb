@@ -151,7 +151,7 @@ media/
 api_yamdb/
 api/
 .models.py
-creations/
-admin.py
-tests.py
-views.py
+reviews/
+.admin.py
+.tests.py
+.views.py

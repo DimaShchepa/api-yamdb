@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.db.models import Avg
 
 from users.models import User
-from creations.models import Title, Review, Comment, Category, Genre
+from reviews.models import Title, Review, Comment, Category, Genre
 from .validators import validate_username
 
 
