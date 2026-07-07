@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import User
-from creations.models import Title, Review, Comment, Category, Genre
+from reviews.models import Title, Review, Comment, Category, Genre
 
 from .permissions import (
     IsAdmin, IsAuthorModeratorAdminOrReadOnly, IsAdminOrReadOnly
