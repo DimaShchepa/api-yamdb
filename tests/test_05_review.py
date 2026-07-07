@@ -115,7 +115,7 @@ class Test05ReviewAPI:
         )
 
         try:
-            from creations.models import Review, Title
+            from reviews.models import Review, Title
         except Exception as e:
             assert False, (
                 'Не удалось импортировать модели из приложения reviews. '
