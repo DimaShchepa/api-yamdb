@@ -71,4 +71,3 @@ class Comment(models.Model):
                               default=1)
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
-
