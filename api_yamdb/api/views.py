@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from django_filters.rest_framework import DjangoFilterBackend
-
+from django.db.models import Avg
+from django.db import IntegrityError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -18,9 +19,10 @@ from .permissions import (
 from .serializers import (
     CurrentUserSerializer, SignupSerializer,
     TokenSerializer, UserSerializer,
-    TitleSerializer, CategorySerializer,
+    TitleReadSerializer, TitleWriteSerializer, CategorySerializer,
     GenreSerializer, ReviewSerializer, CommentSerializer
 )
+from .filters import TitleFilter
 
 
 @api_view(('POST',))
@@ -99,44 +101,63 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Provide API operations for works."""
 
     queryset = Title.objects.select_related('category',)
-    serializer_class = TitleSerializer
+    serializer_class = TitleReadSerializer
     permission_classes = (IsAdmin,)
     http_method_names = ['get', 'post', 'head', 'options', 'patch', 'delete']
+    filter_backends = [DjangoFilterBackend]
+    
+    # filterset_fields = {
+    #     'name': ['icontains'],          # name__icontains
+    #     'year': ['exact'],              # year__exact
+    #     'category__slug': ['in'],       # category__slug__in
+    #     'genre__slug': ['in'],           # genre__slug__in
+    # }
+    filterset_class = TitleFilter
+
+    def get_queryset(self):
+        return Title.objects.annotate(
+            rating=Avg('reviews__score')
+        )
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TitleWriteSerializer
+        return TitleReadSerializer
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return super().get_permissions()
 
-    def filter_queryset(self, queryset):
+    # def filter_queryset(self, queryset):
 
-        category_slugs = self.request.query_params.getlist('category')
-        if category_slugs:
-            category_slugs = [c.strip() for c in category_slugs if c.strip()]
-            if category_slugs:
-                queryset = queryset.filter(category__slug__in=category_slugs)
+    #     category_slugs = self.request.query_params.getlist('category')
+    #     if category_slugs:
+    #         category_slugs = [c.strip() for c in category_slugs if c.strip()]
+    #         if category_slugs:
+    #             queryset = queryset.filter(category__slug__in=category_slugs)
 
-        genre_slugs = self.request.query_params.getlist('genre')
-        if genre_slugs:
-            genre_slugs = [g.strip() for g in genre_slugs if g.strip()]
-            if genre_slugs:
-                queryset = queryset.filter(
-                    genre__slug__in=genre_slugs
-                ).distinct()
+    #     genre_slugs = self.request.query_params.getlist('genre')
+    #     if genre_slugs:
+    #         genre_slugs = [g.strip() for g in genre_slugs if g.strip()]
+    #         if genre_slugs:
+    #             queryset = queryset.filter(
+    #                 genre__slug__in=genre_slugs
+    #             ).distinct()
 
-        year_param = self.request.query_params.get('year')
-        if year_param:
-            try:
-                year_value = int(year_param)
-                queryset = queryset.filter(year=year_value)
-            except (ValueError, TypeError):
-                pass
+    #     year_param = self.request.query_params.get('year')
+    #     if year_param:
+    #         try:
+    #             year_value = int(year_param)
+    #             queryset = queryset.filter(year=year_value)
+    #         except (ValueError, TypeError):
+    #             pass
 
-        name_param = self.request.query_params.get('name')
-        if name_param:
-            queryset = queryset.filter(name__icontains=name_param)
+    #     name_param = self.request.query_params.get('name')
+    #     if name_param:
+    #         queryset = queryset.filter(name__icontains=name_param)
 
-        return queryset
+    #     return queryset
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

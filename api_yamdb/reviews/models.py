@@ -1,6 +1,8 @@
+from django.utils import timezone
 from django.db import models
 from django.db.models.constraints import UniqueConstraint
 from django.core.validators import MinValueValidator, MaxValueValidator
+from rest_framework import serializers
 
 from users.models import User
 
@@ -49,9 +51,25 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre, blank=True, related_name='titles')
     name = models.CharField(max_length=MAX_LENGHT, verbose_name='Название')
-    year = models.IntegerField()
+    year = models.SmallIntegerField(
+        verbose_name='Год выпуска',
+        validators=[
+            MinValueValidator(1, message='Год должен быть не меньше 1.'),
+            MaxValueValidator(
+                timezone.now().year,
+                message=f'Год не может быть больше'
+                f'текущего ({timezone.now().year}).')
+        ]
+    )
     description = models.TextField(blank=True, null=True)
-    rating = models.FloatField(null=True, blank=True)
+
+    # def validate_year(self, value):
+    #     current_year = timezone.now().year
+    #     if value < 1 or value > current_year:
+    #         raise serializers.ValidationError(
+    #             f"Год должен быть между 1 и {current_year}."
+    #         )
+    #     return value
 
     class Meta:
         verbose_name = 'Произведение'
@@ -59,7 +77,8 @@ class Title(models.Model):
         ordering = ['-year', 'name']
 
     def __str__(self):
-        return self.name
+        suffix = f' ({self.year})' if self.year else ''
+        return f'{self.name}{suffix}'
 
 
 class Review(models.Model):
@@ -82,7 +101,9 @@ class Review(models.Model):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ['-pub_date']
-        constraints = [UniqueConstraint(fields=['title', 'author'])]
+        constraints = [UniqueConstraint(
+            fields=['title', 'author'],
+            name='unique_review_per_title_and_author')]
 
     def __str__(self):
         return f'Отзыв {self.id} на "{self.title}" от {self.author.username}'
