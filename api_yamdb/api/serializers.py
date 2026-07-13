@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.db.models import Avg
 
 from users.models import User
 from reviews.models import Title, Review, Comment, Category, Genre
@@ -151,21 +150,26 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'score', 'pub_date', 'author')
 
-    # def create(self, validated_data):
-    #     user = self.context.get('request').user
-    #     title = self.context.get('title')
+    def validate(self, attrs):
+        if self.instance is not None:
+            return attrs
 
-    #     if user and title:
-    #         if Review.objects.filter(title=title, author=user).exists():
-    #             raise serializers.ValidationError(
-    #                 {
-    #                     'non_field_errors': [
-    #                         'Вы уже оставили отзыв на это произведение'
-    #                     ]
-    #                 }
-    #             )
+        request = self.context.get('request')
+        title = self.context.get('title')
 
-    #     return super().create(validated_data)
+        if not request or not title:
+            raise serializers.ValidationError(
+                'Не хватает контекста: request или title')
+
+        user = request.user
+
+        if Review.objects.filter(title=title, author=user).exists():
+            raise serializers.ValidationError(
+                {'non_field_errors':
+                 ['Вы уже оставили отзыв на это произведение']}
+            )
+
+        return attrs
 
 
 class CommentSerializer(serializers.ModelSerializer):

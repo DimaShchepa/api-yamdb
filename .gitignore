@@ -155,3 +155,11 @@ reviews/
 .admin.py
 .tests.py
 .views.py
+
+# Keep the API modules introduced by the project refactoring trackable.
+!api_yamdb/
+api_yamdb/*
+!api_yamdb/api/
+api_yamdb/api/*
+!api_yamdb/api/filters.py
+!api_yamdb/api/mixins.py

@@ -2,7 +2,6 @@ from django.utils import timezone
 from django.db import models
 from django.db.models.constraints import UniqueConstraint
 from django.core.validators import MinValueValidator, MaxValueValidator
-from rest_framework import serializers
 
 from users.models import User
 
@@ -62,14 +61,6 @@ class Title(models.Model):
         ]
     )
     description = models.TextField(blank=True, null=True)
-
-    # def validate_year(self, value):
-    #     current_year = timezone.now().year
-    #     if value < 1 or value > current_year:
-    #         raise serializers.ValidationError(
-    #             f"Год должен быть между 1 и {current_year}."
-    #         )
-    #     return value
 
     class Meta:
         verbose_name = 'Произведение'
