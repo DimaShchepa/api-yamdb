@@ -29,7 +29,7 @@ def signup(request):
     """Register a user and send a confirmation code by email."""
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = serializer.save()
+    user, _ = User.objects.get_or_create(**serializer.validated_data)
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         subject='Код подтверждения YaMDb',

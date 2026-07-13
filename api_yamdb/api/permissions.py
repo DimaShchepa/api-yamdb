@@ -1,6 +1,6 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
-
-from users.models import User
+from rest_framework.permissions import (
+    BasePermission, IsAuthenticatedOrReadOnly, SAFE_METHODS
+)
 
 
 class IsAdmin(BasePermission):
@@ -21,23 +21,13 @@ class IsAdminOrReadOnly(BasePermission):
         )
 
 
-class IsAuthorModeratorAdminOrReadOnly(BasePermission):
+class IsAuthorModeratorAdminOrReadOnly(IsAuthenticatedOrReadOnly):
     """Allow object changes to its author, moderators, or administrators."""
 
-    def has_permission(self, request, view):
+    def has_object_permission(self, request, view, obj):
         return (
             request.method in SAFE_METHODS
-            or request.user.is_authenticated
+            or request.user.is_admin
+            or request.user.is_moderator
+            or obj.author == request.user
         )
-
-    def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return True
-
-        if obj.author == request.user:
-            return True
-
-        if request.user.role in [User.MODERATOR, User.ADMIN]:
-            return True
-
-        return False
