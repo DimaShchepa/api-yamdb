@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from rest_framework import serializers
 
 from users.models import User
@@ -115,19 +116,23 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True,
-        required=False
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all(),
-        allow_null=True,
-        required=False,
     )
 
     class Meta:
         model = Title
         fields = ('id', 'category', 'genre',
                   'name', 'year', 'description')
+
+    def to_representation(self, instance):
+        """Return a title using the response schema from the API docs."""
+        instance.rating = instance.reviews.aggregate(
+            rating=Avg('score')
+        )['rating']
+        return TitleReadSerializer(instance, context=self.context).data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):

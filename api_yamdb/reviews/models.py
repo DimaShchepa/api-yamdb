@@ -75,7 +75,7 @@ class Title(models.Model):
 class Review(models.Model):
     """A model describing the work of reviewers"""
 
-    text = models.CharField(max_length=MAX_LENGHT, verbose_name='Текст отзыва')
+    text = models.TextField(verbose_name='Текст отзыва')
     score = models.IntegerField(verbose_name='Оценка',
                                 validators=[MinValueValidator(1),
                                             MaxValueValidator(10)])
