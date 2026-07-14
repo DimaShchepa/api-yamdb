@@ -148,11 +148,12 @@ dmypy.json
 # папки со статикой и медиа
 media/
 
-# # api_yamdb/
-# api/
-# .models.py
-# reviews/
-# .admin.py
-# .tests.py
-# .views.py
+api_yamdb/
+api/
+.admin.py
+.tests.py
+reviews/
+.admin.py
+.tests.py
+.views.py
 
