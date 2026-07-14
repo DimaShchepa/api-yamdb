@@ -1,57 +1,43 @@
 from django.db.models import Avg
 from rest_framework import serializers
 
-from users.models import User
+from users.models import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH, User
+from users.validators import (
+    unicode_username_validator, validate_reserved_username
+)
 from reviews.models import Title, Review, Comment, Category, Genre
-from .validators import validate_username
 
 
-class SignupSerializer(serializers.ModelSerializer):
+class SignupSerializer(serializers.Serializer):
 
     """Validate data used for user registration."""
     username = serializers.CharField(
-        max_length=150,
-        validators=(validate_username,),
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(validate_reserved_username, unicode_username_validator),
     )
-    email = serializers.EmailField(max_length=254)
-
-    class Meta:
-        model = User
-        fields = ('email', 'username')
-        validators = ()
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     def validate(self, attrs):
-
         """Allow repeated signup only for the same username and email."""
         username = attrs['username']
         email = attrs['email']
         username_owner = User.objects.filter(username=username).first()
         email_owner = User.objects.filter(email=email).first()
+        errors = {}
 
         if username_owner and username_owner.email != email:
-            raise serializers.ValidationError(
-                {'username': 'Это имя пользователя уже занято.'}
-            )
+            errors['username'] = 'Это имя пользователя уже занято.'
         if email_owner and email_owner.username != username:
-            raise serializers.ValidationError(
-                {'email': 'Этот адрес электронной почты уже занят.'}
-            )
+            errors['email'] = 'Этот адрес электронной почты уже занят.'
+        if errors:
+            raise serializers.ValidationError(errors)
         return attrs
-
-    def create(self, validated_data):
-        """Create a user or return one registered with the same data."""
-
-        user, created = User.objects.get_or_create(**validated_data)
-        if created:
-            user.set_unusable_password()
-            user.save()
-        return user
 
 
 class TokenSerializer(serializers.Serializer):
     """Validate data required to obtain a JWT token."""
 
-    username = serializers.CharField(max_length=150)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     confirmation_code = serializers.CharField()
 
 
@@ -59,8 +45,8 @@ class UserSerializer(serializers.ModelSerializer):
     """Serialize user data for administrator endpoints."""
 
     username = serializers.CharField(
-        max_length=150,
-        validators=(validate_username,),
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(validate_reserved_username, unicode_username_validator),
     )
 
     class Meta:
