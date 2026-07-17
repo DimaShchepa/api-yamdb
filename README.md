@@ -160,7 +160,7 @@ ReDoc-документации проекта.
 Запрос:
 
 ```http
-GET /api/v1/titles/?year=1949
+GET /api/v1/titles/?year=1985
 ```
 
 Пример ответа:
@@ -172,21 +172,21 @@ GET /api/v1/titles/?year=1949
   "previous": null,
   "results": [
     {
-      "id": 1,
-      "name": "1984",
-      "year": 1949,
-      "description": "Антиутопический роман",
+      "id": 14,
+      "name": "Назад в будущее",
+      "year": 1985,
+      "description": "",
+      "category": {
+        "name": "Фильм",
+        "slug": "movie"
+      },
       "genre": [
         {
-          "name": "Роман",
-          "slug": "novel"
+          "name": "Фантастика",
+          "slug": "sci-fi"
         }
       ],
-      "category": {
-        "name": "Книга",
-        "slug": "book"
-      },
-      "rating": 9
+      "rating": 6
     }
   ]
 }
