@@ -1,4 +1,3 @@
-from django.db.models import Avg
 from rest_framework import serializers
 
 from users.models import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH, User
