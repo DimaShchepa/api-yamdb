@@ -148,12 +148,10 @@ dmypy.json
 # папки со статикой и медиа
 media/
 
-api_yamdb/
-api/
-.admin.py
-.tests.py
-reviews/
-.admin.py
-.tests.py
-.views.py
+# Неиспользуемые файлы, созданные Django при старте приложений
+api_yamdb/api/admin.py
+api_yamdb/api/tests.py
+api_yamdb/reviews/admin.py
+api_yamdb/reviews/tests.py
+api_yamdb/reviews/views.py
 
