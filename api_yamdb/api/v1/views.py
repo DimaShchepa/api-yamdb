@@ -1,5 +1,4 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets, permissions
@@ -11,7 +10,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import User
 from reviews.models import Title, Review, Category, Genre
-
 from .permissions import (
     IsAdmin, IsAuthorModeratorAdminOrReadOnly, IsAdminOrReadOnly
 )
@@ -22,7 +20,7 @@ from .serializers import (
     GenreSerializer, ReviewSerializer, CommentSerializer
 )
 from .filters import TitleFilter
-from .mixins import ReadOnlyListCreateDestroyViewSet
+from .mixins import CategoryGenreMixin
 
 
 @api_view(('POST',))
@@ -128,8 +126,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
-        if not title_id:
-            raise ValidationError({'title_id': 'Требуется ID произвеления'})
         return get_object_or_404(Title, id=title_id)
 
     def get_queryset(self):
@@ -142,8 +138,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        title = self.get_title()
-        serializer.save(author=self.request.user, title=title)
+        serializer.save(
+            author=self.request.user,
+            title=self.get_title(),
+        )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -169,11 +167,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             review=review,
-            title=review.title,
         )
 
 
-class CategoryViewSet(ReadOnlyListCreateDestroyViewSet):
+class CategoryViewSet(CategoryGenreMixin):
     """Provide API operations for work categories."""
 
     queryset = Category.objects.all()
@@ -181,7 +178,7 @@ class CategoryViewSet(ReadOnlyListCreateDestroyViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class GenreViewSet(ReadOnlyListCreateDestroyViewSet):
+class GenreViewSet(CategoryGenreMixin):
     """Provide API operations for work genres."""
 
     queryset = Genre.objects.all()

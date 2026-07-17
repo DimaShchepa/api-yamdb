@@ -1,9 +1,9 @@
-from django.utils import timezone
 from django.db import models
 from django.db.models.constraints import UniqueConstraint
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from users.models import User
+from .validators import validate_year
 
 
 MAX_LENGHT = 256
@@ -18,7 +18,7 @@ class Category(models.Model):
     class Meta():
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -34,7 +34,7 @@ class Genre(models.Model):
     class Meta():
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -52,20 +52,14 @@ class Title(models.Model):
     name = models.CharField(max_length=MAX_LENGHT, verbose_name='Название')
     year = models.SmallIntegerField(
         verbose_name='Год выпуска',
-        validators=[
-            MinValueValidator(1, message='Год должен быть не меньше 1.'),
-            MaxValueValidator(
-                timezone.now().year,
-                message=f'Год не может быть больше'
-                f'текущего ({timezone.now().year}).')
-        ]
+        validators=(validate_year,),
     )
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True,)
 
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
-        ordering = ['-year', 'name']
+        ordering = ('-year', 'name')
 
     def __str__(self):
         suffix = f' ({self.year})' if self.year else ''
@@ -91,7 +85,7 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         constraints = [UniqueConstraint(
             fields=['title', 'author'],
             name='unique_review_per_title_and_author')]
@@ -109,9 +103,6 @@ class Comment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='comments',
                                verbose_name='Автор комментария')
-    title = models.ForeignKey(Title, on_delete=models.CASCADE,
-                              related_name='comments',
-                              verbose_name='Название произведения')
     text = models.TextField(verbose_name='Текст комментария')
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True,
                                     verbose_name='Дата публикации')
@@ -119,7 +110,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ['pub_date']
+        ordering = ('pub_date',)
 
     def __str__(self):
         preview = self.text[:40]

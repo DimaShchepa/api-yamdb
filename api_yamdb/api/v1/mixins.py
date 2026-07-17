@@ -1,25 +1,16 @@
 from rest_framework.mixins import (ListModelMixin,
                                    CreateModelMixin,
                                    DestroyModelMixin)
-from rest_framework.viewsets import GenericViewSet
 from rest_framework import filters
+from rest_framework.viewsets import GenericViewSet
 
 
-class SlugLookupMixin:
-    """Миксин, который устанавливает поиск по slug для lookup_field."""
-    lookup_field = 'slug'
+class CategoryGenreMixin(ListModelMixin,
+                         CreateModelMixin,
+                         DestroyModelMixin,
+                         GenericViewSet):
+    """Provide common API behavior for categories and genres."""
 
-
-class SearchFilterMixin:
-    """Миксин с настройками фильтров для справочников."""
     filter_backends = (filters.SearchFilter,)
-    search_fields = ['name']
-
-
-class ReadOnlyListCreateDestroyViewSet(SlugLookupMixin,
-                                       SearchFilterMixin,
-                                       ListModelMixin,
-                                       CreateModelMixin,
-                                       DestroyModelMixin,
-                                       GenericViewSet):
-    pass
+    search_fields = ('name',)
+    lookup_field = 'slug'

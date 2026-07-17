@@ -37,17 +37,15 @@ class SignupSerializer(serializers.Serializer):
 class TokenSerializer(serializers.Serializer):
     """Validate data required to obtain a JWT token."""
 
-    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
+    username = serializers.CharField(
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(validate_reserved_username, unicode_username_validator),
+    )
     confirmation_code = serializers.CharField()
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serialize user data for administrator endpoints."""
-
-    username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH,
-        validators=(validate_reserved_username, unicode_username_validator),
-    )
 
     class Meta:
         model = User
@@ -59,17 +57,6 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
-
-    def validate_username(self, value):
-        """Check that username is not used by another user."""
-        queryset = User.objects.filter(username=value)
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise serializers.ValidationError(
-                'Это имя пользователя уже занято.'
-            )
-        return value
 
 
 class CurrentUserSerializer(UserSerializer):
@@ -102,6 +89,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True,
+        allow_empty=False,
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -115,21 +103,19 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Return a title using the response schema from the API docs."""
-        instance.rating = instance.reviews.aggregate(
-            rating=Avg('score')
-        )['rating']
+        instance.rating = getattr(instance, 'rating', None)
         return TitleReadSerializer(instance, context=self.context).data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.ReadOnlyField()
+    rating = serializers.IntegerField(default=None)
 
     class Meta:
         model = Title
-        fields = ['id', 'name', 'year', 'description',
-                  'category', 'genre', 'rating']
+        fields = ('id', 'name', 'year', 'description',
+                  'category', 'genre', 'rating')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -145,19 +131,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             return attrs
 
-        request = self.context.get('request')
-        title = self.context.get('title')
+        request = self.context['request']
+        title_id = self.context['view'].kwargs['title_id']
 
-        if not request or not title:
+        if Review.objects.filter(
+            title_id=title_id,
+            author=request.user,
+        ).exists():
             raise serializers.ValidationError(
-                'Не хватает контекста: request или title')
-
-        user = request.user
-
-        if Review.objects.filter(title=title, author=user).exists():
-            raise serializers.ValidationError(
-                {'non_field_errors':
-                 ['Вы уже оставили отзыв на это произведение']}
+                'Вы уже оставили отзыв на это произведение.'
             )
 
         return attrs

@@ -14,8 +14,4 @@ class TitleFilter(django_filters.FilterSet):
 
     class Meta:
         model = Title
-        fields = ['name', 'year', 'category', 'genre']
-
-    @property
-    def qs(self):
-        return super().qs.distinct()
+        fields = ('name', 'year', 'category', 'genre')

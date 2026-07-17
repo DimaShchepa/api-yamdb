@@ -1,14 +1,15 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from rest_framework import serializers
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 username_validator = UnicodeUsernameValidator()
 
 
-def validate_username(value):
-    if value == 'me':
-        raise serializers.ValidationError(
-            'Использовать "me" в качестве username запрещено.'
+def validate_year(value):
+    """Reject publication years later than the current year."""
+    current_year = timezone.now().year
+    if value > current_year:
+        raise ValidationError(
+            f'Год не может быть больше текущего ({current_year}).'
         )
-    username_validator(value)
-    return value
