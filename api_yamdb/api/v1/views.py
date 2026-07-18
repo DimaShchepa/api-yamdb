@@ -20,7 +20,7 @@ from .serializers import (
     GenreSerializer, ReviewSerializer, CommentSerializer
 )
 from .filters import TitleFilter
-from .mixins import CategoryGenreMixin
+from .viewsets import CategoryGenreViewSet
 
 
 @api_view(('POST',))
@@ -170,7 +170,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
 
-class CategoryViewSet(CategoryGenreMixin):
+class CategoryViewSet(CategoryGenreViewSet):
     """Provide API operations for work categories."""
 
     queryset = Category.objects.all()
@@ -178,7 +178,7 @@ class CategoryViewSet(CategoryGenreMixin):
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class GenreViewSet(CategoryGenreMixin):
+class GenreViewSet(CategoryGenreViewSet):
     """Provide API operations for work genres."""
 
     queryset = Genre.objects.all()

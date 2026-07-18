@@ -102,7 +102,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Return a title using the response schema from the API docs."""
-        instance.rating = getattr(instance, 'rating', None)
         return TitleReadSerializer(instance, context=self.context).data
 
 
@@ -120,7 +119,9 @@ class TitleReadSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Serialize user reviews."""
 
-    author = serializers.CharField(source='author.username', read_only=True)
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
 
     class Meta:
         model = Review

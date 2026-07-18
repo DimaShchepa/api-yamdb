@@ -63,10 +63,38 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Примените миграции и запустите сервер:
+Примените миграции:
 
 ```bash
 python api_yamdb/manage.py migrate
+```
+
+### Наполнение базы данных
+
+После применения миграций базу можно наполнить тестовыми данными из
+CSV-файлов каталога `api_yamdb/static/data`:
+
+```bash
+python api_yamdb/manage.py import_csv
+```
+
+Команда импортирует пользователей, категории, жанры, произведения, связи
+произведений с жанрами, отзывы и комментарии. Повторный запуск обновляет
+записи с теми же идентификаторами.
+
+Для импорта файлов из другого каталога укажите путь явно:
+
+```bash
+python api_yamdb/manage.py import_csv --data-dir path/to/csv
+```
+
+Перед импортом все семь файлов должны находиться в указанном каталоге:
+`users.csv`, `category.csv`, `genre.csv`, `titles.csv`, `genre_title.csv`,
+`review.csv` и `comments.csv`.
+
+Запустите сервер:
+
+```bash
 python api_yamdb/manage.py runserver
 ```
 

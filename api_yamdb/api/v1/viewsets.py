@@ -5,10 +5,10 @@ from rest_framework import filters
 from rest_framework.viewsets import GenericViewSet
 
 
-class CategoryGenreMixin(ListModelMixin,
-                         CreateModelMixin,
-                         DestroyModelMixin,
-                         GenericViewSet):
+class CategoryGenreViewSet(ListModelMixin,
+                           CreateModelMixin,
+                           DestroyModelMixin,
+                           GenericViewSet):
     """Provide common API behavior for categories and genres."""
 
     filter_backends = (filters.SearchFilter,)

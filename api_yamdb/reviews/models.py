@@ -7,6 +7,9 @@ from .validators import validate_year
 
 
 MAX_LENGHT = 256
+MIN_SCORE = 1
+MAX_SCORE = 10
+PREVIEW_TEXT = 40
 
 
 class Category(models.Model):
@@ -71,8 +74,8 @@ class Review(models.Model):
 
     text = models.TextField(verbose_name='Текст отзыва')
     score = models.IntegerField(verbose_name='Оценка',
-                                validators=[MinValueValidator(1),
-                                            MaxValueValidator(10)])
+                                validators=[MinValueValidator(MIN_SCORE),
+                                            MaxValueValidator(MAX_SCORE)])
     title = models.ForeignKey(Title, on_delete=models.CASCADE,
                               related_name='reviews',
                               verbose_name='Произведение')
@@ -113,7 +116,7 @@ class Comment(models.Model):
         ordering = ('pub_date',)
 
     def __str__(self):
-        preview = self.text[:40]
-        if len(self.text) > 40:
+        preview = self.text[:PREVIEW_TEXT]
+        if len(self.text) > PREVIEW_TEXT:
             preview += '...'
         return f'Комментарий {self.id}: {preview} от {self.author.username}'
