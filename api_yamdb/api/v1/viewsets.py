@@ -4,6 +4,8 @@ from rest_framework.mixins import (ListModelMixin,
 from rest_framework import filters
 from rest_framework.viewsets import GenericViewSet
 
+from .permissions import IsAdminOrReadOnly
+
 
 class CategoryGenreViewSet(ListModelMixin,
                            CreateModelMixin,
@@ -14,3 +16,4 @@ class CategoryGenreViewSet(ListModelMixin,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    permission_classes = (IsAdminOrReadOnly,)

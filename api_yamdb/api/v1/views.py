@@ -132,11 +132,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = self.get_title()
         return title.reviews.all().select_related('author')
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['title'] = self.get_title()
-        return context
-
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
@@ -175,7 +170,6 @@ class CategoryViewSet(CategoryGenreViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
 
 
 class GenreViewSet(CategoryGenreViewSet):
@@ -183,4 +177,3 @@ class GenreViewSet(CategoryGenreViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
